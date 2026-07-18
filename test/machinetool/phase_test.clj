@@ -23,6 +23,12 @@
       (is (not (contains? auto :accuracy-test/screen))
           (str "phase " n " must not auto-commit :accuracy-test/screen")))))
 
+(deftest issue-maintenance-notice-never-auto-at-any-phase
+  (testing "a maintenance/recall notice about equipment already in the field is never auto-eligible, same posture as the two actuation ops"
+    (doseq [[n {:keys [auto]}] phase/phases]
+      (is (not (contains? auto :issue-maintenance-notice))
+          (str "phase " n " must not auto-commit :issue-maintenance-notice")))))
+
 (deftest phase-0-is-fully-read-only
   (is (empty? (:writes (get phase/phases 0)))))
 
@@ -35,7 +41,8 @@
 
 (deftest gate-escalates-a-clean-non-auto-write
   (is (= :escalate (:disposition (phase/gate 3 {:op :actuation/dispatch-unit} :commit))))
-  (is (= :escalate (:disposition (phase/gate 3 {:op :actuation/issue-accuracy-certificate} :commit)))))
+  (is (= :escalate (:disposition (phase/gate 3 {:op :actuation/issue-accuracy-certificate} :commit))))
+  (is (= :escalate (:disposition (phase/gate 3 {:op :issue-maintenance-notice} :commit)))))
 
 (deftest gate-holds-a-write-disabled-in-this-phase
   (is (= :hold (:disposition (phase/gate 0 {:op :unit/intake} :commit)))))

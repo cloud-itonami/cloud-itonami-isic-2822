@@ -110,5 +110,45 @@
     {"record" record "evidence_number" evidence-number
      "certificate" (unsigned-certificate "AccuracyCertificate" evidence-number evidence-number)}))
 
+(defn register-maintenance-notice
+  "Validate + construct the MAINTENANCE/RECALL-NOTICE registration
+  DRAFT -- the manufacturer's own act of issuing a maintenance or
+  recall notice for a unit it PREVIOUSLY dispatched, referencing that
+  prior `:actuation/dispatch-unit`'s own `dispatch-ref` (the
+  `:equipment-asset` shared shape a downstream operator actor, e.g.
+  cloud-itonami-isic-2813 (registering machine tools THIS actor
+  dispatches to it as an operated equipment asset tied to one of its
+  own `:station/cell`s), independently cross-checks against its own
+  registered equipment asset -- superproject ADR, no shared code, the
+  SAME pattern cloud-itonami-isic-2813's own `pressureequip.registry/
+  register-maintenance-notice` establishes toward cloud-itonami-
+  jsic-4721). Pure function -- does not touch any real fab/final-
+  assembly control system; it builds the RECORD a manufacturer would
+  keep. Unlike `register-unit-dispatch`/`register-accuracy-
+  certificate`, a unit may receive MANY maintenance notices over its
+  life (recurring maintenance, more than one recall), so there is no
+  double-issuance guard here -- `machinetool.governor` instead
+  INDEPENDENTLY re-verifies that the referenced `dispatch-ref` actually
+  corresponds to a unit this actor itself already dispatched, before
+  this is ever allowed to commit."
+  [unit-id dispatch-ref jurisdiction sequence]
+  (when-not (and unit-id (not= unit-id ""))
+    (throw (ex-info "maintenance-notice: unit_id required" {})))
+  (when-not (and dispatch-ref (not= dispatch-ref ""))
+    (throw (ex-info "maintenance-notice: dispatch_ref required" {})))
+  (when-not (and jurisdiction (not= jurisdiction ""))
+    (throw (ex-info "maintenance-notice: jurisdiction required" {})))
+  (when (< sequence 0)
+    (throw (ex-info "maintenance-notice: sequence must be >= 0" {})))
+  (let [notice-number (str (str/upper-case jurisdiction) "-MMN-" (zero-pad sequence 6))
+        record {"record_id" notice-number
+                "kind" "maintenance-notice-draft"
+                "unit_id" unit-id
+                "dispatch_ref" dispatch-ref
+                "jurisdiction" jurisdiction
+                "immutable" true}]
+    {"record" record "notice_number" notice-number
+     "certificate" (unsigned-certificate "MaintenanceNotice" notice-number notice-number)}))
+
 (defn append [history result]
   (conj (vec history) (get result "record")))
