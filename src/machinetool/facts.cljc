@@ -60,28 +60,36 @@
   `pressureequip.facts/unit-types` (no shared code -- this actor's own
   independent copy of the same catalog convention).
 
-  These two entries exist to give the superproject equipment-asset-
-  linkage ADR (cloud-itonami-isic-2822<->cloud-itonami-isic-2813) a
-  `:unit-type-id` for the machine tools THIS actor dispatches to
-  isic-2813's own factory floor -- an industrial welding cell (for
-  isic-2813's frame-weld station) and a CNC machining center (for
-  isic-2813's brazing/assembly stations). Two classification fields on
-  each entry come from EXTERNAL, independently-verifiable authorities
-  and are reported HONESTLY per this fleet's anti-fabrication
-  discipline (see ns docstring / ADR on UNSPSC/GTIN linkage in the
-  superproject's `90-docs/adr/`):
+  These THREE entries (originally two -- `:unit/metal-additive-
+  manufacturing-system` added alongside isic-2813's own AM-printed fan
+  housing, see that repo's `resources/pressureequip/*.edn`) exist to
+  give the superproject equipment-asset-linkage ADR
+  (cloud-itonami-isic-2822<->cloud-itonami-isic-2813) a `:unit-type-id`
+  for the machine tools THIS actor dispatches to isic-2813's own
+  factory floor -- an industrial welding cell (for isic-2813's
+  frame-weld station), a CNC machining center (for isic-2813's
+  brazing/assembly stations), and a metal additive-manufacturing
+  (industrial metal 3D-printing) system (for isic-2813's new
+  `st:am-print` station, which prints the integrated condenser-fan
+  housing/impeller `resources/pressureequip/compressor-unit-bom.edn`'s
+  `part:am-fan-housing` line uses). Two classification fields on each
+  entry come from EXTERNAL, independently-verifiable authorities and
+  are reported HONESTLY per this fleet's anti-fabrication discipline
+  (see ns docstring / ADR on UNSPSC/GTIN linkage in the superproject's
+  `90-docs/adr/`):
 
     `:unspsc-code` -- an 8-digit UNSPSC (United Nations Standard
     Products and Services Code) code, UNSPSC segment 23 ('Industrial
     Manufacturing and Processing Machinery and Accessories', the same
     segment this actor's own machine-tool-manufacturing domain lives
-    in). Neither entry below could be confirmed at the specific 8-digit
-    COMMODITY level via independent public commodity-code references
-    (usa.databasesets.com class/family pages, an NCC-DOA/NASA-SEWP
-    UNSPSC scope PDF cross-check) -- this namespace does NOT fabricate
-    a more specific commodity code UNSPSC does not publicly confirm,
-    so both entries stop at the CLASS level (6 significant digits,
-    zero-padded to 8, per this task's own explicit fallback allowance):
+    in). The first two entries below could not be confirmed at the
+    specific 8-digit COMMODITY level via independent public
+    commodity-code references (usa.databasesets.com class/family
+    pages, an NCC-DOA/NASA-SEWP UNSPSC scope PDF cross-check) -- this
+    namespace does NOT fabricate a more specific commodity code UNSPSC
+    does not publicly confirm, so both stop at the CLASS level (6
+    significant digits, zero-padded to 8, per this task's own explicit
+    fallback allowance):
       - `:unit/industrial-welding-cell` -> `\"23271400\"`, UNSPSC class
         'Welding machinery', family 23270000 'Welding and soldering
         and brazing machinery and accessories and supplies'.
@@ -95,6 +103,40 @@
     independently cross-checked directly against NASA SEWP's own
     published UNSPSC scope PDF (sewp.nasa.gov/documents/
     Website_UNSPSC_Scope_080824.pdf).
+
+    `:unit/metal-additive-manufacturing-system` -> `\"23261505\"`, an
+    actual 8-digit UNSPSC COMMODITY (not merely a class-level fallback)
+    -- 'Selective laser sintering machine', class 23261500 'Rapid
+    prototyping machines', family 23260000 'Rapid prototyping
+    machinery and accessories', still within the SAME segment
+    23000000 this catalog's other two entries live in. Confirmed via
+    two independent sources: (1) usa.databasesets.com's own commodity
+    page for 23261507 lists the full segment/family/class/commodity
+    chain, and its sibling class page for 23261500 enumerates all
+    seven commodities in that class (23261501 Fused deposition
+    modeling machine / 23261502 Inkjet method machine / 23261503
+    Laminated object manufacturing machine / 23261504 Laser powder
+    forming machine / 23261505 Selective laser sintering machine /
+    23261506 Stereolithography machine / 23261507 Three dimensional
+    printing machine); (2) the SAME NASA SEWP UNSPSC scope PDF cited
+    above independently lists segment 23000000 -> family 23260000
+    'Rapid prototyping machinery and accessories' -> class 23261500
+    'Rapid prototyping machines' verbatim. `23261505` ('Selective
+    laser sintering machine') was chosen over the more generic
+    `23261507` ('Three dimensional printing machine') because it names
+    the SPECIFIC process this catalog entry declares
+    (`:build-process :powder-bed-fusion`, see the entry's own
+    docstring below for why PBF was chosen over DED) -- UNSPSC's
+    'selective laser sintering' terminology predates the metal-AM
+    industry's later 'laser powder bed fusion'/'DMLS'/'SLM' naming,
+    but describes the IDENTICAL physical process (a laser selectively
+    fuses successive layers of a powder bed) regardless of whether the
+    powder is polymer or metal -- this is not a fabricated mapping,
+    it is the taxonomy's own closest process-accurate commodity, and
+    is reported here as an honest INTERPRETATION rather than an
+    official UNSPSC metal-AM-specific code (UNSPSC segment 23260000 was
+    seeded pre-metal-AM and has no separate 'metal' qualifier at the
+    commodity level).
 
     `:gtin` -- a GTIN (Global Trade Item Number) is NOT a
     classification taxonomy code at all -- it is an identifier GS1
@@ -123,6 +165,30 @@
     :name "CNCマシニングセンタ"
     :unspsc-code "23242400"
     :gtin "0212822000025"
+    :gtin/status :unissued-blueprint-placeholder}
+   :unit/metal-additive-manufacturing-system
+   {:id :unit/metal-additive-manufacturing-system
+    :name "産業用金属積層造形システム"
+    ;; Build process: Powder Bed Fusion (PBF, specifically laser-based
+    ;; metal PBF -- DMLS/SLM/L-PBF are industry trade names for the
+    ;; SAME underlying process class UNSPSC calls 'selective laser
+    ;; sintering'), chosen over Directed Energy Deposition (DED)
+    ;; because this system's job at isic-2813 is printing a small,
+    ;; geometrically complex, thin-walled part (an integrated
+    ;; condenser-fan housing/impeller, `part:am-fan-housing` --
+    ;; see compressor-unit-bom.edn/compressor-unit-prod-order.edn)
+    ;; where PBF's fine layer resolution and support for intricate
+    ;; internal/overhang geometry is the industry-standard fit (e.g.
+    ;; turbine/compressor impellers are a textbook L-PBF use case).
+    ;; DED (laser/wire metal deposition) is comparatively suited to
+    ;; large-scale near-net-shape builds, cladding and repair of
+    ;; existing parts -- not this station's job -- so it was not
+    ;; chosen here.
+    :build-process :powder-bed-fusion
+    :build-volume-mm [400.0 400.0 400.0]
+    :materials ["SUS316L(ステンレス鋼)" "Inconel 718(ニッケル基超合金)" "AlSi10Mg(アルミ合金)"]
+    :unspsc-code "23261505"
+    :gtin "0212822000032"
     :gtin/status :unissued-blueprint-placeholder}})
 
 (defn unit-type-by-id [id]
