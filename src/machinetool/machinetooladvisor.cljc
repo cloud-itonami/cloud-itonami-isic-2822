@@ -139,19 +139,38 @@
   See README `Actuation`: no phase ever adds this op to a phase's
   `:auto` set (`machinetool.phase`); the governor also always
   escalates on `:actuation/issue-accuracy-certificate`. Two
-  independent layers agree, deliberately."
-  [db {:keys [subject]}]
-  (let [a (store/unit db subject)]
+  independent layers agree, deliberately.
+
+  Since the superproject independent-verification-of-self-issued-
+  certificates ADR (`machinetool.governor` ns docstring Addendum 2),
+  a MANDATORY `:certification/testlab-engagement-ref` -- naming a
+  completed engagement + issued certification number at the
+  independent third-party accredited testing laboratory actor
+  `cloud-itonami-isic-7120` -- must accompany this proposal. The
+  advisor only ECHOES the caller's own `:certification/testlab-
+  engagement-ref` (from `request`) into `:value`; it never invents
+  one. `machinetool.governor/testlab-engagement-ref-missing-
+  violations` INDEPENDENTLY re-verifies the reference's own wire-shape
+  completeness before anything commits."
+  [db {:keys [subject] :as request}]
+  (let [a (store/unit db subject)
+        ref (:certification/testlab-engagement-ref request)
+        ref-present? (registry/testlab-engagement-ref-fields-present? ref)]
     {:summary    (str subject " 向け精度証明書発行提案"
                       (when a (str " (unit=" (:unit-name a) ")")))
-     :rationale  (if a
-                   "jurisdiction-evidence-checklist referenced"
-                   "機体記録が見つかりません")
-     :cites      (if a [subject] [])
+     :rationale  (cond
+                   (not a) "機体記録が見つかりません"
+                   ref-present? (str "第三者検定機関(" (:testlab-engagement-ref/source-actor ref)
+                                     ")のengagement/certification参照 "
+                                     (:testlab-engagement-ref/certification-number ref) " を引用")
+                   :else "jurisdiction-evidence-checklist referenced -- 第三者検定機関のengagement参照が未提示/不完全")
+     :cites      (cond-> (if a [subject] [])
+                   ref-present? (conj (:testlab-engagement-ref/certification-number ref)))
      :effect     :unit/mark-certified
-     :value      {:unit-id subject}
+     :value      (cond-> {:unit-id subject}
+                   ref (assoc :certification/testlab-engagement-ref ref))
      :stake      :actuation/issue-accuracy-certificate
-     :confidence (if a 0.9 0.3)}))
+     :confidence (if (and a ref-present?) 0.9 0.3)}))
 
 (defn- propose-maintenance-notice
   "Draft a MAINTENANCE/RECALL NOTICE for a unit, referencing that

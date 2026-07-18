@@ -48,8 +48,12 @@
       (println "-- human machine-tool engineer approves --")
       (println (approve! actor "t4")))
 
-    (println "== actuation/issue-accuracy-certificate unit-1 (always escalates -- actuation/issue-accuracy-certificate) ==")
-    (let [r (exec! actor "t5" {:op :actuation/issue-accuracy-certificate :subject "unit-1"} operator)]
+    (println "== actuation/issue-accuracy-certificate unit-1 (always escalates -- actuation/issue-accuracy-certificate; carries a testlab-engagement-ref into the independent third-party accredited testing laboratory actor cloud-itonami-isic-7120) ==")
+    (let [r (exec! actor "t5" {:op :actuation/issue-accuracy-certificate :subject "unit-1"
+                               :certification/testlab-engagement-ref
+                               {:testlab-engagement-ref/id "engagement-1"
+                                :testlab-engagement-ref/source-actor "cloud-itonami-isic-7120"
+                                :testlab-engagement-ref/certification-number "JPN-CERT-000000"}} operator)]
       (println r)
       (println "-- human machine-tool engineer approves --")
       (println (approve! actor "t5")))

@@ -33,7 +33,20 @@
   an immutable log -- the audit trail a community trusting a
   machine-tool manufacturer needs, and the evidence a manufacturer
   needs if a dispatch or accuracy-certificate decision is later
-  disputed."
+  disputed.
+
+  ── Additive: testlab-engagement-ref (superproject independent-
+  verification-of-self-issued-certificates ADR) ──
+
+  A unit whose accuracy certificate has been issued now also carries
+  `:testlab-engagement-ref` -- the MANDATORY `:certification/testlab-
+  engagement-ref` the proposal supplied, re-verified complete by
+  `machinetool.governor/testlab-engagement-ref-missing-violations`
+  before commit is ever reached, and persisted onto the unit record
+  here so the independent third-party accredited testing laboratory
+  actor (`cloud-itonami-isic-7120`) engagement/certification that
+  justified this issuance stays queryable, not just checked-then-
+  discarded. See `machinetool.governor` ns docstring Addendum 2."
   (:require #?(:clj  [clojure.edn :as edn]
                :cljs [cljs.reader :as edn])
             [machinetool.registry :as registry]
@@ -105,14 +118,21 @@
   "Backend-agnostic `:unit/mark-certified` -- looks up the
   unit via the protocol and drafts the accuracy-certificate
   record, and returns {:result .. :unit-patch ..} for the caller
-  to persist."
-  [s unit-id]
+  to persist. `ref` (when present -- the proposal's own
+  `:certification/testlab-engagement-ref`, ALREADY re-verified
+  complete by `machinetool.governor/testlab-engagement-ref-missing-
+  violations` before commit is ever reached) is folded into the
+  unit-patch so the independent third-party engagement/certification
+  reference that justified this issuance stays on the unit's own
+  record, not just checked-then-discarded."
+  [s unit-id & [ref]]
   (let [a (unit s unit-id)
         seq-n (next-evidence-sequence s (:jurisdiction a))
         result (registry/register-accuracy-certificate unit-id (:jurisdiction a) seq-n)]
     {:result result
-     :unit-patch {:accuracy-certified? true
-                      :evidence-number (get result "evidence_number")}}))
+     :unit-patch (cond-> {:accuracy-certified? true
+                          :evidence-number (get result "evidence_number")}
+                   ref (assoc :testlab-engagement-ref ref))}))
 
 (defn- issue-maintenance-notice!
   "Backend-agnostic `:maintenance-notice/issue` -- looks up the unit
@@ -168,7 +188,8 @@
 
       :unit/mark-certified
       (let [unit-id (first path)
-            {:keys [result unit-patch]} (issue-accuracy-certificate! s unit-id)
+            ref (:certification/testlab-engagement-ref value)
+            {:keys [result unit-patch]} (issue-accuracy-certificate! s unit-id ref)
             jurisdiction (:jurisdiction (unit s unit-id))]
         (swap! a (fn [state]
                    (-> state
@@ -225,7 +246,8 @@
 (defn- unit->tx [{:keys [id unit-name positioning-accuracy-deviation-actual positioning-accuracy-deviation-min positioning-accuracy-deviation-max
                           accuracy-test-defect-unresolved?
                           unit-dispatched? accuracy-certified?
-                          jurisdiction status dispatch-number evidence-number]}]
+                          jurisdiction status dispatch-number evidence-number
+                          testlab-engagement-ref]}]
   (cond-> {:unit/id id}
     unit-name                                   (assoc :unit/unit-name unit-name)
     positioning-accuracy-deviation-actual        (assoc :unit/positioning-accuracy-deviation-actual positioning-accuracy-deviation-actual)
@@ -237,13 +259,15 @@
     jurisdiction                                 (assoc :unit/jurisdiction jurisdiction)
     status                                       (assoc :unit/status status)
     dispatch-number                              (assoc :unit/dispatch-number dispatch-number)
-    evidence-number                              (assoc :unit/evidence-number evidence-number)))
+    evidence-number                              (assoc :unit/evidence-number evidence-number)
+    testlab-engagement-ref                       (assoc :unit/testlab-engagement-ref (enc testlab-engagement-ref))))
 
 (def ^:private unit-pull
   [:unit/id :unit/unit-name :unit/positioning-accuracy-deviation-actual
    :unit/positioning-accuracy-deviation-min :unit/positioning-accuracy-deviation-max
    :unit/accuracy-test-defect-unresolved? :unit/unit-dispatched? :unit/accuracy-certified?
-   :unit/jurisdiction :unit/status :unit/dispatch-number :unit/evidence-number])
+   :unit/jurisdiction :unit/status :unit/dispatch-number :unit/evidence-number
+   :unit/testlab-engagement-ref])
 
 (defn- pull->unit [m]
   (when (:unit/id m)
@@ -255,7 +279,8 @@
      :unit-dispatched? (boolean (:unit/unit-dispatched? m))
      :accuracy-certified? (boolean (:unit/accuracy-certified? m))
      :jurisdiction (:unit/jurisdiction m) :status (:unit/status m)
-     :dispatch-number (:unit/dispatch-number m) :evidence-number (:unit/evidence-number m)}))
+     :dispatch-number (:unit/dispatch-number m) :evidence-number (:unit/evidence-number m)
+     :testlab-engagement-ref (dec* (:unit/testlab-engagement-ref m))}))
 
 (defrecord DatomicStore [conn]
   Store
@@ -332,7 +357,8 @@
 
       :unit/mark-certified
       (let [unit-id (first path)
-            {:keys [result unit-patch]} (issue-accuracy-certificate! s unit-id)
+            ref (:certification/testlab-engagement-ref value)
+            {:keys [result unit-patch]} (issue-accuracy-certificate! s unit-id ref)
             jurisdiction (:jurisdiction (unit s unit-id))
             next-n (inc (next-evidence-sequence s jurisdiction))]
         (d/transact! conn
