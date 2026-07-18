@@ -152,3 +152,34 @@
 
 (defn append [history result]
   (conj (vec history) (get result "record")))
+
+;; ----------------------------- testlab-engagement-ref (additive) -----------------------------
+;;
+;; Independent third-party verification of an accuracy certificate --
+;; superproject ADR (independent-verification-of-self-issued-
+;; certificates), the ADR-2607176500 SecurityIncidentGovernor
+;; `disclosure-integrity` theme (self-attestation alone is not enough)
+;; applied to this actor's own `:actuation/issue-accuracy-
+;; certificate`. A MANDATORY reference into an independent accredited
+;; testing laboratory actor (cloud-itonami-isic-7120, `testlab.
+;; store`'s own engagement `:id` + `testlab.registry/register-
+;; certification`'s own issued certification number) that this actor
+;; cannot skip -- the SAME wire shape and discipline cloud-itonami-
+;; isic-2813's own `pressureequip.registry/testlab-engagement-ref-
+;; fields-present?` establishes (no shared code, this actor's own
+;; independent copy).
+
+(defn testlab-engagement-ref-fields-present?
+  "True when `ref` (the `:certification/testlab-engagement-ref` value
+  on an `:actuation/issue-accuracy-certificate` proposal) carries all
+  three REQUIRED `:testlab-engagement-ref/*` identity fields
+  (`:testlab-engagement-ref/id`/`:testlab-engagement-ref/source-
+  actor`/`:testlab-engagement-ref/certification-number`) -- called on
+  EVERY such proposal, this reference is MANDATORY: see
+  `machinetool.governor/testlab-engagement-ref-missing-violations`,
+  which also treats a wholly ABSENT `ref` as the same violation, not a
+  separate one. `nil` (the field entirely absent) is NOT present."
+  [ref]
+  (and (map? ref)
+       (every? some? ((juxt :testlab-engagement-ref/id :testlab-engagement-ref/source-actor
+                            :testlab-engagement-ref/certification-number) ref))))

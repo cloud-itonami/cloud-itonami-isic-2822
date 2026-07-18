@@ -113,7 +113,38 @@
   unit's own recorded `:dispatch-number`. `:issue-maintenance-notice`
   also joins `high-stakes` (below): a maintenance/recall notice about
   equipment already in the field always escalates to a human, exactly
-  like the two actuation ops."
+  like the two actuation ops.
+
+  Addendum 2 (superproject independent-verification-of-self-issued-
+  certificates ADR, cloud-itonami-isic-2822<->cloud-itonami-isic-7120):
+  an EIGHTH HARD check, `testlab-engagement-ref-missing-violations`,
+  was added for `:actuation/issue-accuracy-certificate` -- this
+  actor's own accuracy certificate has been a wholly SELF-issued act
+  (this Governor hard-checks this actor's own measured positioning-
+  accuracy/evidence/defect status, but never an INDEPENDENT third
+  party) ever since R0, the exact structural gap ADR-2607176500's
+  disclosure-integrity finding (self-attestation alone is not
+  sufficient) names. `:actuation/issue-accuracy-certificate` now
+  REQUIRES a `:certification/testlab-engagement-ref` naming a
+  completed engagement + issued certification number at the
+  independent third-party accredited testing laboratory actor
+  `cloud-itonami-isic-7120` (`testlab.store`/`testlab.registry`) --
+  the SAME wire shape and discipline cloud-itonami-isic-2813's own
+  `pressureequip.governor/testlab-engagement-ref-missing-violations`
+  establishes (no shared code, this actor's own independent copy):
+  this reference is MANDATORY, its total absence is itself the
+  violation. This is an intentional BREAKING change to this op's
+  existing call contract (like isic-1075's own `:coordinate-shipment`
+  `:handoff`-required change, ADR-2607177600) -- an accuracy-
+  certificate proposal that omits the reference now HARD-holds where
+  it previously could clear this ns's other checks. Same fleet-
+  standalone-convention limitation as every prior handoff-style
+  check: this actor cannot call isic-7120's own store directly (no
+  shared `:local/root`/API dependency), so it can only verify the
+  REFERENCE's own wire-shape completeness (`registry/testlab-
+  engagement-ref-fields-present?`), not reach across and confirm the
+  referenced engagement/certification actually exists on isic-7120's
+  live store."
   (:require [machinetool.facts :as facts]
             [machinetool.registry :as registry]
             [machinetool.store :as store]))
@@ -234,6 +265,28 @@
                       ", unit-dispatched?=" (boolean (:unit-dispatched? a))
                       ")と一致しない -- 未実行または架空のdispatch-ref参照")}]))))
 
+(defn- testlab-engagement-ref-missing-violations
+  "For `:actuation/issue-accuracy-certificate`, the proposal's
+  `:value` must carry a complete `:certification/testlab-engagement-
+  ref` (`registry/testlab-engagement-ref-fields-present?`) -- a
+  reference into the independent third-party accredited testing
+  laboratory actor `cloud-itonami-isic-7120`'s own completed
+  engagement + issued certification number. Unlike every other HARD
+  check in this ns, which re-verifies THIS actor's own ground-truth
+  fields, this one exists because self-attestation alone is not
+  enough: an accuracy certificate issued purely by the manufacturer
+  that built the machine tool, with no independent verification, is
+  the structural gap ADR-2607176500's disclosure-integrity finding
+  warns against (see ns docstring Addendum 2). A MISSING reference is
+  refused exactly like an INCOMPLETE one -- absence itself is the
+  violation, not just fabrication once present."
+  [{:keys [op]} proposal]
+  (when (= op :actuation/issue-accuracy-certificate)
+    (when-not (registry/testlab-engagement-ref-fields-present?
+               (:certification/testlab-engagement-ref (:value proposal)))
+      [{:rule :testlab-engagement-ref-missing
+        :detail "第三者検定機関(cloud-itonami-isic-7120)のengagement/certification参照(:certification/testlab-engagement-ref)が無い、または不完全 -- 自己発行のみでの精度証明書発行は許可されない"}])))
+
 (defn check
   "Censors a Machine Tool Advisor proposal against the governor rules.
   Returns {:ok? bool :violations [..] :confidence c :escalate? bool
@@ -241,7 +294,12 @@
 
   Includes `dispatch-ref-unverified-violations` -- a SEVENTH hard
   check added alongside `:issue-maintenance-notice` (see ns docstring
-  Addendum), purely additive: it only ever fires for that op."
+  Addendum), purely additive: it only ever fires for that op. Also
+  includes `testlab-engagement-ref-missing-violations` -- an EIGHTH
+  hard check (see ns docstring Addendum 2), a BREAKING change for
+  `:actuation/issue-accuracy-certificate`: unlike every other op-
+  scoped check above, this one fires on a MISSING field, not only a
+  fabricated/incomplete one."
   [request _context proposal st]
   (let [hard (into []
                    (concat (spec-basis-violations request proposal)
@@ -250,7 +308,8 @@
                            (accuracy-test-defect-unresolved-violations request proposal st)
                            (already-dispatched-violations request st)
                            (already-certified-violations request st)
-                           (dispatch-ref-unverified-violations request proposal st)))
+                           (dispatch-ref-unverified-violations request proposal st)
+                           (testlab-engagement-ref-missing-violations request proposal)))
         conf (:confidence proposal 0.0)
         low? (< conf confidence-floor)
         stakes? (boolean (high-stakes (:stake proposal)))
