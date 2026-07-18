@@ -95,7 +95,25 @@
   `:accuracy-certified?` facts (never a `:status` value) -- the SAME
   'check a dedicated boolean, not status' discipline every prior
   sibling governor's guards establish, informed by `cloud-itonami-
-  isic-6492`'s status-lifecycle bug (ADR-2607071320)."
+  isic-6492`'s status-lifecycle bug (ADR-2607071320).
+
+  Addendum (superproject equipment-asset-linkage ADR, cloud-itonami-
+  isic-2822<->cloud-itonami-isic-2813): a SEVENTH HARD check,
+  `dispatch-ref-unverified-violations`, was added alongside a new
+  `:issue-maintenance-notice` op -- isic-2822's own copy of the SAME
+  op cloud-itonami-isic-2813's `pressureequip.governor` already
+  established (no shared code; isic-2822 dispatches machine tools/
+  welding cells to isic-2813's own factory floor, the mirror image of
+  isic-2813 dispatching pressure-equipment units to cloud-itonami-
+  jsic-4721's cold-storage warehouse). For `:issue-maintenance-notice`,
+  INDEPENDENTLY verify (never trust the proposal's own echo) that the
+  unit this notice names was actually already `:actuation/dispatch-
+  unit`-dispatched by THIS actor and that the proposal's claimed
+  `:dispatch-ref` (`(:value proposal)`'s `:dispatch-ref`) matches the
+  unit's own recorded `:dispatch-number`. `:issue-maintenance-notice`
+  also joins `high-stakes` (below): a maintenance/recall notice about
+  equipment already in the field always escalates to a human, exactly
+  like the two actuation ops."
   (:require [machinetool.facts :as facts]
             [machinetool.registry :as registry]
             [machinetool.store :as store]))
@@ -108,7 +126,8 @@
   issuing a real ISO 230 accuracy certificate are the two real-world
   actuation events this actor performs -- a two-member set, matching
   every prior dual-actuation sibling's shape."
-  #{:actuation/dispatch-unit :actuation/issue-accuracy-certificate})
+  #{:actuation/dispatch-unit :actuation/issue-accuracy-certificate
+    :issue-maintenance-notice})
 
 ;; ----------------------------- checks -----------------------------
 
@@ -192,10 +211,37 @@
       [{:rule :already-certified
         :detail (str subject " は既に精度証明書発行済み")}])))
 
+(defn- dispatch-ref-unverified-violations
+  "For `:issue-maintenance-notice`, INDEPENDENTLY verify that the unit
+  named by `subject` was actually already `:actuation/dispatch-unit`-
+  dispatched by THIS actor, and that the proposal's claimed
+  `:dispatch-ref` (`(:value proposal)`'s `:dispatch-ref`) matches the
+  unit's own recorded `:dispatch-number` -- never trust the proposal's
+  own echo of a prior record, the SAME anti-fabrication discipline
+  cloud-itonami-isic-2813's own `pressureequip.governor/dispatch-ref-
+  unverified-violations` establishes (no shared code, this actor's own
+  independent copy). A unit that was never dispatched (or a
+  `:dispatch-ref` that doesn't match its own recorded dispatch-number)
+  HARD-holds; there is no override."
+  [{:keys [op subject]} proposal st]
+  (when (= op :issue-maintenance-notice)
+    (let [a (store/unit st subject)
+          claimed (:dispatch-ref (:value proposal))]
+      (when-not (and (:unit-dispatched? a) (some? claimed) (= claimed (:dispatch-number a)))
+        [{:rule :dispatch-ref-unverified
+          :detail (str subject " の :dispatch-ref (" claimed
+                      ") が実際の完成機実行記録(dispatch-number=" (:dispatch-number a)
+                      ", unit-dispatched?=" (boolean (:unit-dispatched? a))
+                      ")と一致しない -- 未実行または架空のdispatch-ref参照")}]))))
+
 (defn check
   "Censors a Machine Tool Advisor proposal against the governor rules.
   Returns {:ok? bool :violations [..] :confidence c :escalate? bool
-  :high-stakes? bool :hard? bool}."
+  :high-stakes? bool :hard? bool}.
+
+  Includes `dispatch-ref-unverified-violations` -- a SEVENTH hard
+  check added alongside `:issue-maintenance-notice` (see ns docstring
+  Addendum), purely additive: it only ever fires for that op."
   [request _context proposal st]
   (let [hard (into []
                    (concat (spec-basis-violations request proposal)
@@ -203,7 +249,8 @@
                            (unit-accuracy-out-of-range-violations request st)
                            (accuracy-test-defect-unresolved-violations request proposal st)
                            (already-dispatched-violations request st)
-                           (already-certified-violations request st)))
+                           (already-certified-violations request st)
+                           (dispatch-ref-unverified-violations request proposal st)))
         conf (:confidence proposal 0.0)
         low? (< conf confidence-floor)
         stakes? (boolean (high-stakes (:stake proposal)))

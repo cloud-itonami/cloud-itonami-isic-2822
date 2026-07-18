@@ -51,6 +51,83 @@
 
 (defn spec-basis [iso3] (get catalog iso3))
 
+(def unit-types
+  "Catalog of concrete manufactured UNIT MODELS this actor's units can
+  declare a `:unit-type-id` reference to (a SEPARATE catalog from
+  `catalog` above, which is per-JURISDICTION regulatory evidence, not
+  per-PRODUCT spec data -- this catalog does not replace or alter
+  `catalog`). Same shape as cloud-itonami-isic-2813's own
+  `pressureequip.facts/unit-types` (no shared code -- this actor's own
+  independent copy of the same catalog convention).
+
+  These two entries exist to give the superproject equipment-asset-
+  linkage ADR (cloud-itonami-isic-2822<->cloud-itonami-isic-2813) a
+  `:unit-type-id` for the machine tools THIS actor dispatches to
+  isic-2813's own factory floor -- an industrial welding cell (for
+  isic-2813's frame-weld station) and a CNC machining center (for
+  isic-2813's brazing/assembly stations). Two classification fields on
+  each entry come from EXTERNAL, independently-verifiable authorities
+  and are reported HONESTLY per this fleet's anti-fabrication
+  discipline (see ns docstring / ADR on UNSPSC/GTIN linkage in the
+  superproject's `90-docs/adr/`):
+
+    `:unspsc-code` -- an 8-digit UNSPSC (United Nations Standard
+    Products and Services Code) code, UNSPSC segment 23 ('Industrial
+    Manufacturing and Processing Machinery and Accessories', the same
+    segment this actor's own machine-tool-manufacturing domain lives
+    in). Neither entry below could be confirmed at the specific 8-digit
+    COMMODITY level via independent public commodity-code references
+    (usa.databasesets.com class/family pages, an NCC-DOA/NASA-SEWP
+    UNSPSC scope PDF cross-check) -- this namespace does NOT fabricate
+    a more specific commodity code UNSPSC does not publicly confirm,
+    so both entries stop at the CLASS level (6 significant digits,
+    zero-padded to 8, per this task's own explicit fallback allowance):
+      - `:unit/industrial-welding-cell` -> `\"23271400\"`, UNSPSC class
+        'Welding machinery', family 23270000 'Welding and soldering
+        and brazing machinery and accessories and supplies'.
+      - `:unit/cnc-machining-center` -> `\"23242400\"`, UNSPSC class
+        'Machining centers', family 23240000 'Metal cutting machinery
+        and accessories'.
+    Both families/classes were independently confirmed via multiple
+    consistent usa.databasesets.com search results, and the parent
+    segment (23000000, 'Industrial Manufacturing and Processing
+    Machinery and Accessories') plus the 23240000 family title were
+    independently cross-checked directly against NASA SEWP's own
+    published UNSPSC scope PDF (sewp.nasa.gov/documents/
+    Website_UNSPSC_Scope_080824.pdf).
+
+    `:gtin` -- a GTIN (Global Trade Item Number) is NOT a
+    classification taxonomy code at all -- it is an identifier GS1
+    issues per REGISTERED PHYSICAL PRODUCT, only after a real company
+    enrolls with GS1 and assigns it. Like `pressureequip.facts/unit-
+    types`, every `:gtin` value here is a SYNTACTICALLY VALID but
+    NEVER-ISSUED placeholder: built on GS1's own officially-documented
+    'Restricted Circulation Number' (RCN) prefix '021' (the SAME
+    020-029 reserved-for-internal-use range isic-2813's own catalog
+    uses), encoding this actor's own ISIC code (2822) plus a sequence,
+    with a correctly computed Modulo-10 GTIN-13 check digit (verified
+    against the standard EAN-13 worked example 400638133393->1, the
+    SAME worked example isic-2813's own catalog cites). The sibling key
+    `:gtin/status :unissued-blueprint-placeholder` makes the
+    non-issuance explicit and machine-checkable; treat `:gtin` here as
+    an EXAMPLE VALUE ONLY, never as a real, GS1-issued identifier for
+    an actual unit."
+  {:unit/industrial-welding-cell
+   {:id :unit/industrial-welding-cell
+    :name "産業用溶接セル(溶接ロボット+溶接機)"
+    :unspsc-code "23271400"
+    :gtin "0212822000018"
+    :gtin/status :unissued-blueprint-placeholder}
+   :unit/cnc-machining-center
+   {:id :unit/cnc-machining-center
+    :name "CNCマシニングセンタ"
+    :unspsc-code "23242400"
+    :gtin "0212822000025"
+    :gtin/status :unissued-blueprint-placeholder}})
+
+(defn unit-type-by-id [id]
+  (get unit-types id))
+
 (defn coverage
   ([] (coverage (keys catalog)))
   ([iso3s]

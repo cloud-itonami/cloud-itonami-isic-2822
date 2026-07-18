@@ -29,11 +29,20 @@
   never auto-eligible, at any phase -- the same posture every
   sibling's screening op has. Phase 3's `:auto` set here has only ONE
   member (`:unit/intake`) -- this domain has no separate no-capital-
-  risk 'file' lifecycle distinct from the unit record itself.")
+  risk 'file' lifecycle distinct from the unit record itself.
+
+  `:issue-maintenance-notice` (superproject equipment-asset-linkage
+  ADR, cloud-itonami-isic-2822<->cloud-itonami-isic-2813) joins this
+  same never-auto set: a maintenance/recall notice about equipment
+  already dispatched into the field is real-world safety/compliance
+  communication, given the same human-in-the-loop treatment as the two
+  actuation ops -- `machinetool.governor`'s `high-stakes` set
+  independently enforces this too.")
 
 (def read-ops  #{})
 (def write-ops #{:unit/intake :design-rules/verify :accuracy-test/screen
-                 :actuation/dispatch-unit :actuation/issue-accuracy-certificate})
+                 :actuation/dispatch-unit :actuation/issue-accuracy-certificate
+                 :issue-maintenance-notice})
 
 ;; NOTE the invariant: `:actuation/dispatch-unit`/`:actuation/
 ;; issue-accuracy-certificate` are members of `write-ops` (governor-

@@ -74,6 +74,25 @@
         (store/append-ledger! s {:op :b :disposition :hold})
         (is (= [:commit :hold] (mapv :disposition (store/ledger s))))))))
 
+(deftest maintenance-notice-write-and-ledger-parity
+  (doseq [[label s] (backends)]
+    (testing label
+      (testing "unit dispatch first, so the maintenance notice has a real dispatch-ref to reference"
+        (store/commit-record! s {:effect :unit/mark-dispatched :path ["unit-1"]}))
+      (testing "maintenance notice drafts a record, advances the sequence, and allows more than one per unit"
+        (store/commit-record! s {:effect :maintenance-notice/issue :path ["unit-1"]
+                                 :value {:unit-id "unit-1" :dispatch-ref "JPN-MTL-000000"}})
+        (is (= "JPN-MMN-000000" (get (first (store/maintenance-notice-history s)) "record_id")))
+        (is (= "maintenance-notice-draft" (get (first (store/maintenance-notice-history s)) "kind")))
+        (is (= "JPN-MTL-000000" (get (first (store/maintenance-notice-history s)) "dispatch_ref")))
+        (is (= 1 (count (store/maintenance-notice-history s))))
+        (is (= 1 (store/next-maintenance-notice-sequence s "JPN")))
+        (store/commit-record! s {:effect :maintenance-notice/issue :path ["unit-1"]
+                                 :value {:unit-id "unit-1" :dispatch-ref "JPN-MTL-000000"}})
+        (is (= 2 (count (store/maintenance-notice-history s)))
+            "a unit may receive more than one maintenance notice, unlike dispatch/certificate")
+        (is (= "JPN-MMN-000001" (get (second (store/maintenance-notice-history s)) "record_id")))))))
+
 (deftest datomic-empty-store-is-usable
   (let [s (store/datomic-store)]
     (is (nil? (store/unit s "nope")))
