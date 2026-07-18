@@ -37,5 +37,17 @@
     (is (= :unissued-blueprint-placeholder (:gtin/status u))
         "placeholder GTIN is never presented as a real, GS1-issued identifier")))
 
+(deftest metal-additive-manufacturing-system-unit-type-has-unspsc-and-gtin
+  (let [u (facts/unit-type-by-id :unit/metal-additive-manufacturing-system)]
+    (is (some? u))
+    (is (= "23261505" (:unspsc-code u))
+        "UNSPSC commodity code (family 23260000, class 23261500 'Rapid prototyping machines', commodity 'Selective laser sintering machine')")
+    (is (= "0212822000032" (:gtin u)))
+    (is (= :unissued-blueprint-placeholder (:gtin/status u))
+        "placeholder GTIN is never presented as a real, GS1-issued identifier")
+    (is (= :powder-bed-fusion (:build-process u)))
+    (is (vector? (:build-volume-mm u)))
+    (is (seq (:materials u)))))
+
 (deftest unknown-unit-type-has-no-fabricated-entry
   (is (nil? (facts/unit-type-by-id :unit/does-not-exist))))
