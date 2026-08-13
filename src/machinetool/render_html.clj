@@ -387,8 +387,10 @@
            dispatch-number evidence-number]}]
   (let [in-spec? (and (>= positioning-accuracy-deviation-actual positioning-accuracy-deviation-min)
                       (<= positioning-accuracy-deviation-actual positioning-accuracy-deviation-max))
+        ;; the glyph must not assert a membership that is false
         acc (str positioning-accuracy-deviation-actual
-                 " &isin; [" positioning-accuracy-deviation-min
+                 (if in-spec? " &isin; [" " &notin; [")
+                 positioning-accuracy-deviation-min
                  "," positioning-accuracy-deviation-max "]")]
     (tr (esc id)
         (esc unit-name)
