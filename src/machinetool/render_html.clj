@@ -182,6 +182,12 @@
                      :certification/testlab-engagement-ref testlab-engagement-ref}})
     (step {:tid "u1-notice" :approve-by "op-1" :note "high-stakes: equipment already in the field"
            :request {:op :issue-maintenance-notice :subject "unit-1"}})
+    ;; A SECOND notice for the SAME unit -- legal, and deliberate: unlike
+    ;; dispatch/certificate there is no double-issuance guard here, so
+    ;; this is the case that proves the approver table addresses records
+    ;; positionally instead of by unit id.
+    (step {:tid "u1-notice-2" :approve-by "op-2" :note "second notice for the same unit is legal"
+           :request {:op :issue-maintenance-notice :subject "unit-1"}})
 
     ;; ---- unit-2 (ATL): a jurisdiction this actor has no spec-basis for ----
     (step {:tid "u2-verify" :note "HARD: no official spec-basis for ATL"
@@ -261,33 +267,52 @@
     (sequential? x) (some approver-in x)
     :else nil))
 
+(def ^:private history-kinds
+  "Effects whose artifact lands in an append-only history rather than at
+  an addressable key."
+  {:unit/mark-dispatched     ["unit-dispatch draft"        store/dispatch-history]
+   :unit/mark-certified      ["accuracy-certificate draft" store/evidence-history]
+   :maintenance-notice/issue ["maintenance-notice draft"   store/maintenance-notice-history]})
+
+(defn- history-positions
+  "thread-id -> the position its artifact occupies in the append-only
+  history its effect writes to.
+
+  `machinetool.store/commit-record!` appends in commit order, and the
+  step log is in run order, so the n-th committed step with a given
+  effect is the n-th entry of that effect's history. Positional on
+  purpose: a unit may legitimately receive MORE THAN ONE maintenance
+  notice (`machinetool.registry/register-maintenance-notice` has no
+  double-issuance guard, unlike dispatch/certificate), so looking the
+  record up by `unit_id` would make the second notice inherit the
+  FIRST one's approver."
+  [steps]
+  (first
+   (reduce (fn [[acc counts] {:keys [thread-id record disposition]}]
+             (let [e (:effect record)]
+               (if (and (= :commit disposition) (contains? history-kinds e))
+                 [(assoc acc thread-id (get counts e 0)) (update counts e (fnil inc 0))]
+                 [acc counts])))
+           [{} {}] steps)))
+
 (defn- artifact-for
   "The artifact a committed step actually wrote, fetched back OUT of the
-  store. Traced from the run's own `:record` (its `:effect`/`:path`),
-  never by joining on `[op subject]`."
-  [db {:keys [record]}]
+  store. Traced from the run's own `:record` (its `:effect`/`:path`)
+  plus its positional slot, never by joining on `[op subject]`."
+  [db positions {:keys [record thread-id]}]
   (let [{:keys [effect path]} record
         id (first path)]
-    (case effect
-      :unit/upsert              {:kind "unit record"                  :ref id
-                                 :artifact (store/unit db id)}
-      :verification/set         {:kind "design-rules verification"    :ref id
-                                 :artifact (store/requirements-verification-of db id)}
-      :accuracy-test-screen/set {:kind "ISO 230 screening"            :ref id
-                                 :artifact (store/accuracy-screen-of db id)}
-      :unit/mark-dispatched     (let [r (first (filter #(= id (get % "unit_id"))
-                                                       (store/dispatch-history db)))]
-                                  {:kind "unit-dispatch draft" :ref (get r "record_id")
-                                   :artifact r})
-      :unit/mark-certified      (let [r (first (filter #(= id (get % "unit_id"))
-                                                       (store/evidence-history db)))]
-                                  {:kind "accuracy-certificate draft" :ref (get r "record_id")
-                                   :artifact r})
-      :maintenance-notice/issue (let [r (first (filter #(= id (get % "unit_id"))
-                                                       (store/maintenance-notice-history db)))]
-                                  {:kind "maintenance-notice draft" :ref (get r "record_id")
-                                   :artifact r})
-      {:kind (str effect) :ref id :artifact nil})))
+    (if-let [[kind history-fn] (history-kinds effect)]
+      (let [r (nth (vec (history-fn db)) (get positions thread-id -1) nil)]
+        {:kind kind :ref (get r "record_id") :artifact r})
+      (case effect
+        :unit/upsert              {:kind "unit record"               :ref id
+                                   :artifact (store/unit db id)}
+        :verification/set         {:kind "design-rules verification" :ref id
+                                   :artifact (store/requirements-verification-of db id)}
+        :accuracy-test-screen/set {:kind "ISO 230 screening"         :ref id
+                                   :artifact (store/accuracy-screen-of db id)}
+        {:kind (str effect) :ref id :artifact nil}))))
 
 (defn approver-attribution
   "MEASURED, per approved step: did the approver the human supplied
@@ -299,10 +324,11 @@
   This function does not assume either answer -- it reads the artifact
   back and looks."
   [db steps]
-  (->> steps
+  (let [positions (history-positions steps)]
+    (->> steps
        (filter #(and (:approved-by %) (= :commit (:disposition %))))
        (mapv (fn [{:keys [thread-id op approved-by] :as s}]
-               (let [{:keys [kind ref artifact]} (artifact-for db s)
+               (let [{:keys [kind ref artifact]} (artifact-for db positions s)
                      retained (approver-in artifact)]
                  {:thread-id thread-id
                   :op op
@@ -310,7 +336,7 @@
                   :ref ref
                   :approved-by approved-by
                   :retained? (some? retained)
-                  :retained retained})))))
+                  :retained retained}))))))
 
 ;; ----------------------------- html helpers -----------------------------
 

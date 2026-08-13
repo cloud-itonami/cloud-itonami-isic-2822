@@ -2482,7 +2482,7 @@ img,svg { max-width: 100%; height: auto; }</style></head><body>
   </section>
   <section class="card">
     <h2>Operation runs (this scenario)</h2>
-    <p class="muted">Each row is one <code>langgraph</code> graph run through <code>machinetool.operation</code>, identified by its own thread-id. 16 runs: 7 committed, 9 held.</p>
+    <p class="muted">Each row is one <code>langgraph</code> graph run through <code>machinetool.operation</code>, identified by its own thread-id. 17 runs: 8 committed, 9 held.</p>
     <table>
       <thead><tr><th>Thread</th><th>Op</th><th>Subject</th><th>Phase</th><th>Outcome</th><th>Why</th></tr></thead>
       <tbody>
@@ -2492,6 +2492,7 @@ img,svg { max-width: 100%; height: auto; }</style></head><body>
         <tr><td><code>u1-dispatch</code></td><td><code>:actuation/dispatch-unit</code></td><td>unit-1</td><td>3</td><td><span class="ok">approved &amp; committed</span></td><td><span class="muted">high-stakes: never auto at any phase</span></td></tr>
         <tr><td><code>u1-certify</code></td><td><code>:actuation/issue-accuracy-certificate</code></td><td>unit-1</td><td>3</td><td><span class="ok">approved &amp; committed</span></td><td><span class="muted">high-stakes + third-party reference</span></td></tr>
         <tr><td><code>u1-notice</code></td><td><code>:issue-maintenance-notice</code></td><td>unit-1</td><td>3</td><td><span class="ok">approved &amp; committed</span></td><td><span class="muted">high-stakes: equipment already in the field</span></td></tr>
+        <tr><td><code>u1-notice-2</code></td><td><code>:issue-maintenance-notice</code></td><td>unit-1</td><td>3</td><td><span class="ok">approved &amp; committed</span></td><td><span class="muted">second notice for the same unit is legal</span></td></tr>
         <tr><td><code>u2-verify</code></td><td><code>:design-rules/verify</code></td><td>unit-2</td><td>3</td><td><span class="critical">HARD hold &middot; no-spec-basis</span></td><td><span class="muted">HARD: no official spec-basis for ATL</span></td></tr>
         <tr><td><code>u2-dispatch</code></td><td><code>:actuation/dispatch-unit</code></td><td>unit-2</td><td>3</td><td><span class="critical">HARD hold &middot; evidence-incomplete</span></td><td><span class="muted">HARD: required evidence can never be satisfied</span></td></tr>
         <tr><td><code>u2-notice</code></td><td><code>:issue-maintenance-notice</code></td><td>unit-2</td><td>3</td><td><span class="critical">HARD hold &middot; dispatch-ref-unverified</span></td><td><span class="muted">HARD: unit-2 was never dispatched by this actor</span></td></tr>
@@ -2558,6 +2559,7 @@ img,svg { max-width: 100%; height: auto; }</style></head><body>
         <tr><td><code>u1-dispatch</code></td><td><code>:actuation/dispatch-unit</code></td><td>unit-dispatch draft</td><td>JPN-MTL-000000</td><td>op-1</td><td><span class="warn">(audit only &mdash; not retained on record)</span></td></tr>
         <tr><td><code>u1-certify</code></td><td><code>:actuation/issue-accuracy-certificate</code></td><td>accuracy-certificate draft</td><td>JPN-ACC-000000</td><td>op-1</td><td><span class="warn">(audit only &mdash; not retained on record)</span></td></tr>
         <tr><td><code>u1-notice</code></td><td><code>:issue-maintenance-notice</code></td><td>maintenance-notice draft</td><td>JPN-MMN-000000</td><td>op-1</td><td><span class="warn">(audit only &mdash; not retained on record)</span></td></tr>
+        <tr><td><code>u1-notice-2</code></td><td><code>:issue-maintenance-notice</code></td><td>maintenance-notice draft</td><td>JPN-MMN-000001</td><td>op-2</td><td><span class="warn">(audit only &mdash; not retained on record)</span></td></tr>
         <tr><td><code>u3-verify</code></td><td><code>:design-rules/verify</code></td><td>design-rules verification</td><td>unit-3</td><td>op-1</td><td><span class="ok">op-1 &mdash; retained on record</span></td></tr>
       </tbody>
     </table>
@@ -2571,6 +2573,7 @@ img,svg { max-width: 100%; height: auto; }</style></head><body>
         <tr><td>unit dispatch</td><td>JPN-MTL-000000</td><td>unit-dispatch-draft</td><td>unit-1</td><td>JPN</td><td><span class="muted">&mdash;</span></td></tr>
         <tr><td>accuracy certificate</td><td>JPN-ACC-000000</td><td>accuracy-certificate-draft</td><td>unit-1</td><td>JPN</td><td><span class="muted">&mdash;</span></td></tr>
         <tr><td>maintenance notice</td><td>JPN-MMN-000000</td><td>maintenance-notice-draft</td><td>unit-1</td><td>JPN</td><td>JPN-MTL-000000</td></tr>
+        <tr><td>maintenance notice</td><td>JPN-MMN-000001</td><td>maintenance-notice-draft</td><td>unit-1</td><td>JPN</td><td>JPN-MTL-000000</td></tr>
       </tbody>
     </table>
   </section>
@@ -2587,7 +2590,7 @@ img,svg { max-width: 100%; height: auto; }</style></head><body>
   </section>
   <section class="card">
     <h2>Audit ledger (this run)</h2>
-    <p class="muted">The append-only decision log <code>machinetool.store</code> wrote — 16 facts: 7 commits, 8 HARD governor refusals, 1 rollout-gate holds.</p>
+    <p class="muted">The append-only decision log <code>machinetool.store</code> wrote — 17 facts: 8 commits, 8 HARD governor refusals, 1 rollout-gate holds.</p>
     <table>
       <thead><tr><th>#</th><th>Fact</th><th>Op</th><th>Actor</th><th>Subject</th><th>Disposition</th><th>Basis</th><th>Summary</th></tr></thead>
       <tbody>
@@ -2597,16 +2600,17 @@ img,svg { max-width: 100%; height: auto; }</style></head><body>
         <tr><td>3</td><td>:committed</td><td><code>:actuation/dispatch-unit</code></td><td>op-1</td><td>unit-1</td><td>:commit</td><td><span class="err">unit-1</span></td><td>unit-1 向け完成機実行提案 (unit=Sakura CNC Lathe SL-04)</td></tr>
         <tr><td>4</td><td>:committed</td><td><code>:actuation/issue-accuracy-certificate</code></td><td>op-1</td><td>unit-1</td><td>:commit</td><td><span class="err">unit-1, JPN-CERT-000000</span></td><td>unit-1 向け精度証明書発行提案 (unit=Sakura CNC Lathe SL-04)</td></tr>
         <tr><td>5</td><td>:committed</td><td><code>:issue-maintenance-notice</code></td><td>op-1</td><td>unit-1</td><td>:commit</td><td><span class="err">unit-1, JPN-MTL-000000</span></td><td>unit-1 向け保守/リコール通知発行提案 (unit=Sakura CNC Lathe SL-04 dispatch-ref=JPN-MTL-000000)</td></tr>
-        <tr><td>6</td><td>:governor-hold</td><td><code>:design-rules/verify</code></td><td>op-1</td><td>unit-2</td><td>:hold</td><td><span class="err">no-spec-basis</span></td><td></td></tr>
-        <tr><td>7</td><td>:governor-hold</td><td><code>:actuation/dispatch-unit</code></td><td>op-1</td><td>unit-2</td><td>:hold</td><td><span class="err">evidence-incomplete</span></td><td></td></tr>
-        <tr><td>8</td><td>:governor-hold</td><td><code>:issue-maintenance-notice</code></td><td>op-1</td><td>unit-2</td><td>:hold</td><td><span class="err">dispatch-ref-unverified</span></td><td></td></tr>
-        <tr><td>9</td><td>:committed</td><td><code>:design-rules/verify</code></td><td>op-1</td><td>unit-3</td><td>:commit</td><td><span class="err">労働安全衛生法 / 機械等の包括的な安全基準に関する指針 / JIS B 6201・B 6336 (ISO 230 整合、参考), https://www.meti.go.jp/</span></td><td>JPN (経済産業省 (METI) / 日本工作機械工業会 (JMTBA) / 日本産業規格 (JIS)) 向け必要書類 4 件を提案</td></tr>
-        <tr><td>10</td><td>:governor-hold</td><td><code>:actuation/dispatch-unit</code></td><td>op-1</td><td>unit-3</td><td>:hold</td><td><span class="err">unit-accuracy-out-of-range</span></td><td></td></tr>
-        <tr><td>11</td><td>:governor-hold</td><td><code>:actuation/issue-accuracy-certificate</code></td><td>op-1</td><td>unit-3</td><td>:hold</td><td><span class="err">testlab-engagement-ref-missing</span></td><td></td></tr>
-        <tr><td>12</td><td>:governor-hold</td><td><code>:accuracy-test/screen</code></td><td>op-1</td><td>unit-4</td><td>:hold</td><td><span class="err">accuracy-test-defect-unresolved</span></td><td></td></tr>
-        <tr><td>13</td><td>:governor-hold</td><td><code>:actuation/dispatch-unit</code></td><td>op-1</td><td>unit-1</td><td>:hold</td><td><span class="err">already-dispatched</span></td><td></td></tr>
-        <tr><td>14</td><td>:governor-hold</td><td><code>:actuation/issue-accuracy-certificate</code></td><td>op-1</td><td>unit-1</td><td>:hold</td><td><span class="err">already-certified</span></td><td></td></tr>
-        <tr><td>15</td><td>:governor-hold</td><td><code>:design-rules/verify</code></td><td>op-1</td><td>unit-1</td><td>:hold</td><td><span class="muted">&mdash;</span></td><td></td></tr>
+        <tr><td>6</td><td>:committed</td><td><code>:issue-maintenance-notice</code></td><td>op-1</td><td>unit-1</td><td>:commit</td><td><span class="err">unit-1, JPN-MTL-000000</span></td><td>unit-1 向け保守/リコール通知発行提案 (unit=Sakura CNC Lathe SL-04 dispatch-ref=JPN-MTL-000000)</td></tr>
+        <tr><td>7</td><td>:governor-hold</td><td><code>:design-rules/verify</code></td><td>op-1</td><td>unit-2</td><td>:hold</td><td><span class="err">no-spec-basis</span></td><td></td></tr>
+        <tr><td>8</td><td>:governor-hold</td><td><code>:actuation/dispatch-unit</code></td><td>op-1</td><td>unit-2</td><td>:hold</td><td><span class="err">evidence-incomplete</span></td><td></td></tr>
+        <tr><td>9</td><td>:governor-hold</td><td><code>:issue-maintenance-notice</code></td><td>op-1</td><td>unit-2</td><td>:hold</td><td><span class="err">dispatch-ref-unverified</span></td><td></td></tr>
+        <tr><td>10</td><td>:committed</td><td><code>:design-rules/verify</code></td><td>op-1</td><td>unit-3</td><td>:commit</td><td><span class="err">労働安全衛生法 / 機械等の包括的な安全基準に関する指針 / JIS B 6201・B 6336 (ISO 230 整合、参考), https://www.meti.go.jp/</span></td><td>JPN (経済産業省 (METI) / 日本工作機械工業会 (JMTBA) / 日本産業規格 (JIS)) 向け必要書類 4 件を提案</td></tr>
+        <tr><td>11</td><td>:governor-hold</td><td><code>:actuation/dispatch-unit</code></td><td>op-1</td><td>unit-3</td><td>:hold</td><td><span class="err">unit-accuracy-out-of-range</span></td><td></td></tr>
+        <tr><td>12</td><td>:governor-hold</td><td><code>:actuation/issue-accuracy-certificate</code></td><td>op-1</td><td>unit-3</td><td>:hold</td><td><span class="err">testlab-engagement-ref-missing</span></td><td></td></tr>
+        <tr><td>13</td><td>:governor-hold</td><td><code>:accuracy-test/screen</code></td><td>op-1</td><td>unit-4</td><td>:hold</td><td><span class="err">accuracy-test-defect-unresolved</span></td><td></td></tr>
+        <tr><td>14</td><td>:governor-hold</td><td><code>:actuation/dispatch-unit</code></td><td>op-1</td><td>unit-1</td><td>:hold</td><td><span class="err">already-dispatched</span></td><td></td></tr>
+        <tr><td>15</td><td>:governor-hold</td><td><code>:actuation/issue-accuracy-certificate</code></td><td>op-1</td><td>unit-1</td><td>:hold</td><td><span class="err">already-certified</span></td><td></td></tr>
+        <tr><td>16</td><td>:governor-hold</td><td><code>:design-rules/verify</code></td><td>op-1</td><td>unit-1</td><td>:hold</td><td><span class="muted">&mdash;</span></td><td></td></tr>
       </tbody>
     </table>
   </section>
