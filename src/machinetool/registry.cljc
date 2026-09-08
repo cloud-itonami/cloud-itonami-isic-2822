@@ -29,7 +29,7 @@
   is `machinetool.operation`'s `:actuation/dispatch-unit`/
   `:actuation/issue-accuracy-certificate`, always human-gated -- see
   README `Actuation`)."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (defn- unsigned-certificate
   "Every certificate this actor produces is UNSIGNED -- signature is the
@@ -75,7 +75,7 @@
     (throw (ex-info "unit-dispatch: jurisdiction required" {})))
   (when (< sequence 0)
     (throw (ex-info "unit-dispatch: sequence must be >= 0" {})))
-  (let [dispatch-number (str (str/upper-case jurisdiction) "-MTL-" (zero-pad sequence 6))
+  (let [dispatch-number (str (str/upper jurisdiction) "-MTL-" (zero-pad sequence 6))
         record {"record_id" dispatch-number
                 "kind" "unit-dispatch-draft"
                 "unit_id" unit-id
@@ -101,7 +101,7 @@
     (throw (ex-info "accuracy-certificate: jurisdiction required" {})))
   (when (< sequence 0)
     (throw (ex-info "accuracy-certificate: sequence must be >= 0" {})))
-  (let [evidence-number (str (str/upper-case jurisdiction) "-ACC-" (zero-pad sequence 6))
+  (let [evidence-number (str (str/upper jurisdiction) "-ACC-" (zero-pad sequence 6))
         record {"record_id" evidence-number
                 "kind" "accuracy-certificate-draft"
                 "unit_id" unit-id
@@ -140,7 +140,7 @@
     (throw (ex-info "maintenance-notice: jurisdiction required" {})))
   (when (< sequence 0)
     (throw (ex-info "maintenance-notice: sequence must be >= 0" {})))
-  (let [notice-number (str (str/upper-case jurisdiction) "-MMN-" (zero-pad sequence 6))
+  (let [notice-number (str (str/upper jurisdiction) "-MMN-" (zero-pad sequence 6))
         record {"record_id" notice-number
                 "kind" "maintenance-notice-draft"
                 "unit_id" unit-id
