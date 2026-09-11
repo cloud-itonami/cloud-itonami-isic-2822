@@ -1,5 +1,5 @@
 (ns machinetool.sim
-  "Demo driver -- `clojure -M:dev:run`. Walks a clean unit through
+  "Demo driver -- `kbb -M:dev:run`. Walks a clean unit through
   intake -> design-rules requirements verification -> ISO 230
   accuracy-test screening -> unit-dispatch proposal (always
   escalates) -> human approval -> commit, then through accuracy-
