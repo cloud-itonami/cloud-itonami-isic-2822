@@ -1,5 +1,5 @@
 (ns machinetool.registry-test
-  (:require [clojure.test :refer [deftest is]]
+  (:require [kotoba.test :refer [deftest is]]
             [machinetool.registry :as r]))
 
 ;; ----------------------------- unit-accuracy-out-of-range? -----------------------------
