@@ -1,0 +1,33 @@
+;; What this vertical's robot physically does, declared for
+;; kotoba.robotics.process (kotoba-lang/robotics). `kbb -M:dev:physics` runs it.
+;;
+;; README "Robotics premise": robots do final assembly, fit-up and the
+;; geometric / positioning accuracy scan of lathes, milling machines and
+;; presses under an actor and an independent Machine Tool Governor, which
+;; never issues an accuracy certificate itself. The work measured here:
+;; waiting until the cast-iron structure has settled to the shop temperature
+;; before the accuracy scan, and placing the test artefact on the table.
+;;
+;; Every number without a cited source is marked `estimate` in its :basis.
+{:physics/schema "itonami.physical-ai.spec.v1"
+ :repo "cloud-itonami/cloud-itonami-isic-2822"
+ :cases
+ [{:id :structure-settle-before-scan
+   :kind :thermal
+   :procedure "a cast-iron column / bed delivered from the 15 C assembly bay settles in the 20 C metrology bay until its core is within 0.5 C (still air, half wall, insulated mid-plane)"
+   :params {:conductivity-w-mk 50.0 :density-kg-m3 7200.0 :specific-heat-j-kgk 460.0
+            :t0-c 15.0 :t-hot-c 20.0 :h-front-w-m2k 8.0 :h-back-w-m2k 0.0
+            :threshold-c 19.5 :duration-s 150000.0 :nodes 3}
+   :sweep {:param :thickness-m :values [0.02 0.03 0.05 0.08 0.12]}
+   :quantity :time-to-threshold-s
+   :limit {:max 43200.0 :basis "estimate: a 12-hour settling slot before the accuracy scan; ISO 230-3 addresses thermal effects on machine tools but the slot length does not come from it; still-air h 8 W/m2K is an estimate"}
+   :boundary {:lo 0.015 :hi 0.15}}
+  {:id :artefact-onto-table
+   :kind :manipulator
+   :procedure "arm places the accuracy test artefact (ball-bar fixture / test piece) on the machine table"
+   :params {:l1-m 0.70 :l2-m 0.60 :m1-kg 12.0 :m2-kg 8.0
+            :from [0.60 0.40] :to [0.95 0.05] :duration-s 2.5 :steps 400}
+   :sweep {:param :payload-kg :values [2.0 5.0 10.0 15.0 25.0]}
+   :quantity :peak-tau1-nm
+   :limit {:max 300.0 :basis "estimate: continuous shoulder torque of a ~25 kg-class industrial arm"}
+   :boundary {:lo 0.5 :hi 60.0}}]}
