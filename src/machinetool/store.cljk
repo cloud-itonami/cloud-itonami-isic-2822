@@ -47,7 +47,7 @@
   actor (`cloud-itonami-isic-7120`) engagement/certification that
   justified this issuance stays queryable, not just checked-then-
   discarded. See `machinetool.governor` ns docstring Addendum 2."
-  (:require #?(:clj  [clojure.edn :as edn]
+  (:require #?(:clj  [kotoba.lang.edn :as edn]
                :cljs [cljs.reader :as edn])
             [machinetool.registry :as registry]
             [langchain.db :as d]))
